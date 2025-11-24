@@ -74,3 +74,15 @@ class TestPersonalAccount:
     def test_promo_code_after_1960(self):
         account = PersonalAccount("John", "Doe", "85111100165", "PROM_123")
         assert account.balance == 50.0
+
+    def test_yob_from_pesel_before_2000(self):
+        account = PersonalAccount("John", "Doe", "85050512345")
+        assert account.yob_from_pesel() == 1985
+
+    def test_yob_from_pesel_post_2000(self):
+        account = PersonalAccount("John", "Doe", "01210112345")
+        assert account.yob_from_pesel() == 2001
+
+    def test_yob_from_pesel_invalid(self):
+        account = PersonalAccount("Bob", "Doe", "1234567ABCD")
+        assert account.yob_from_pesel() == 0
