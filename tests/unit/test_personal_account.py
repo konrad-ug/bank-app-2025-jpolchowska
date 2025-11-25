@@ -86,3 +86,41 @@ class TestPersonalAccount:
     def test_yob_from_pesel_invalid(self):
         account = PersonalAccount("Bob", "Doe", "1234567ABCD")
         assert account.yob_from_pesel() == 0
+
+    # Testy funkcji submit_for_loan
+
+    def test_loan_three_positives(self):
+        account = PersonalAccount("John", "Doe", "85111100165")
+        account.history = [50, 30, 100]
+        assert account.submit_for_loan(30) is True
+        assert account.balance == 30
+
+    def test_loan_five_with_sum_greater_than_zero(self):
+        account = PersonalAccount("John", "Doe", "85111100165")
+        account.history = [50.0, 30.0, 40.0, -10.0, -10.0]
+        assert account.submit_for_loan(30) is True
+        assert account.balance == 30
+
+    def test_loan_one_positive(self):
+        account = PersonalAccount("John", "Doe", "85111100165")
+        account.history = [40]
+        assert account.submit_for_loan(30) is False
+        assert account.balance == 0
+
+    def test_loan_three_but_one_negative(self):
+        account = PersonalAccount("John", "Doe", "85111100165")
+        account.history = [10.0, 10.0, -20.0]
+        assert account.submit_for_loan(30) is False
+        assert account.balance == 0
+
+    def test_loan_five_with_sum_lesser_than_zero(self):
+        account = PersonalAccount("John", "Doe", "85111100165")
+        account.history = [-10.0, -10.0, -20.0, 10.0, 10.0]
+        assert account.submit_for_loan(30) is False
+        assert account.balance == 0
+
+    def test_loan_five_with_sum_lesser_than_requested_amount(self):
+        account = PersonalAccount("John", "Doe", "85111100165")
+        account.history = [50.0, -10.0, -20.0, -10.0, 10.0]
+        assert account.submit_for_loan(30) is False
+        assert account.balance == 0
