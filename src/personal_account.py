@@ -39,3 +39,28 @@ class PersonalAccount(Account):
     def express_transfer(self, amount: float) -> None:
         fee = 1.0
         super().express_transfer(amount, fee)
+
+    def submit_for_loan(self, amount: float):
+        length = len(self.history)
+        # WARUNEK 1 - ostatnie trzy transakcje są dodatnie
+        if length >= 3 and self.are_last_three_positive():
+            self.balance += amount
+            return True
+        # WARUNEK 2 - suma ostatnich pięciu transakcji > amount
+        if length >= 5 and self.is_sum_of_last_five_greater_than_amount(amount):
+            self.balance += amount
+            return True
+        return False
+    
+    def are_last_three_positive(self):
+        if self.history[-1] > 0 and self.history[-2] > 0 and self.history[-3] > 0:
+            return True
+        else:
+            return False
+        
+    def is_sum_of_last_five_greater_than_amount(self, amount):
+        last_five_sum = self.history[-5] + self.history[-4] + self.history[-3] + self.history[-2] + self.history[-1]
+        if last_five_sum > amount:
+            return True
+        else:
+            return False

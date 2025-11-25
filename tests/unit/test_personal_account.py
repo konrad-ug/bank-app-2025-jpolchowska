@@ -1,4 +1,5 @@
 from src.personal_account import PersonalAccount
+import pytest
 
 class TestPersonalAccount:
     def test_personal_account_creation(self):
@@ -86,3 +87,36 @@ class TestPersonalAccount:
     def test_yob_from_pesel_invalid(self):
         account = PersonalAccount("Bob", "Doe", "1234567ABCD")
         assert account.yob_from_pesel() == 0
+
+
+class TestLoan:
+
+    @pytest.fixture(autouse=True)
+    def account(self):
+        self.account = PersonalAccount("John", "Doe", "85111100165")
+
+    @pytest.mark.parametrize(
+        "history, amount, expected_result, expected_balance",
+        [
+            ([50, 30, 100], 30, True, 30),
+            ([50.0, 30.0, 40.0, -10.0, -10.0], 30, True, 30),
+            ([40], 30, False, 0),
+            ([10.0, 10.0, -20.0], 30, False, 0),
+            ([-10.0, -10.0, -20.0, 10.0, 10.0], 30, False, 0),
+            ([50.0, -10.0, -20.0, -10.0, 10.0], 30, False, 0),
+        ],
+        ids=[
+            "three positives",
+            "five with sum greater than zero",
+            "one positive",
+            "three but one negative",
+            "five with sum less than zero",
+            "five but sum lesser than requested amount"
+        ]
+    )
+
+    def test_loan(self, history, amount, expected_result, expected_balance):
+        self.account.history = history
+        result = self.account.submit_for_loan(amount)
+        assert result == expected_result
+        assert self.account.balance == expected_balance
