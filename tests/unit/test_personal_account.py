@@ -1,4 +1,5 @@
 from src.personal_account import PersonalAccount
+import pytest
 
 class TestPersonalAccount:
     def test_personal_account_creation(self):
@@ -87,40 +88,35 @@ class TestPersonalAccount:
         account = PersonalAccount("Bob", "Doe", "1234567ABCD")
         assert account.yob_from_pesel() == 0
 
-    # Testy funkcji submit_for_loan
 
-    def test_loan_three_positives(self):
-        account = PersonalAccount("John", "Doe", "85111100165")
-        account.history = [50, 30, 100]
-        assert account.submit_for_loan(30) is True
-        assert account.balance == 30
+class TestLoan:
 
-    def test_loan_five_with_sum_greater_than_zero(self):
-        account = PersonalAccount("John", "Doe", "85111100165")
-        account.history = [50.0, 30.0, 40.0, -10.0, -10.0]
-        assert account.submit_for_loan(30) is True
-        assert account.balance == 30
+    @pytest.fixture(autouse=True)
+    def account(self):
+        self.account = PersonalAccount("John", "Doe", "85111100165")
 
-    def test_loan_one_positive(self):
-        account = PersonalAccount("John", "Doe", "85111100165")
-        account.history = [40]
-        assert account.submit_for_loan(30) is False
-        assert account.balance == 0
+    @pytest.mark.parametrize(
+        "history, amount, expected_result, expected_balance",
+        [
+            ([50, 30, 100], 30, True, 30),
+            ([50.0, 30.0, 40.0, -10.0, -10.0], 30, True, 30),
+            ([40], 30, False, 0),
+            ([10.0, 10.0, -20.0], 30, False, 0),
+            ([-10.0, -10.0, -20.0, 10.0, 10.0], 30, False, 0),
+            ([50.0, -10.0, -20.0, -10.0, 10.0], 30, False, 0),
+        ],
+        ids=[
+            "three positives",
+            "five with sum greater than zero",
+            "one positive",
+            "three but one negative",
+            "five with sum less than zero",
+            "five but sum lesser than requested amount"
+        ]
+    )
 
-    def test_loan_three_but_one_negative(self):
-        account = PersonalAccount("John", "Doe", "85111100165")
-        account.history = [10.0, 10.0, -20.0]
-        assert account.submit_for_loan(30) is False
-        assert account.balance == 0
-
-    def test_loan_five_with_sum_lesser_than_zero(self):
-        account = PersonalAccount("John", "Doe", "85111100165")
-        account.history = [-10.0, -10.0, -20.0, 10.0, 10.0]
-        assert account.submit_for_loan(30) is False
-        assert account.balance == 0
-
-    def test_loan_five_with_sum_lesser_than_requested_amount(self):
-        account = PersonalAccount("John", "Doe", "85111100165")
-        account.history = [50.0, -10.0, -20.0, -10.0, 10.0]
-        assert account.submit_for_loan(30) is False
-        assert account.balance == 0
+    def test_loan(self, history, amount, expected_result, expected_balance):
+        self.account.history = history
+        result = self.account.submit_for_loan(amount)
+        assert result == expected_result
+        assert self.account.balance == expected_balance
