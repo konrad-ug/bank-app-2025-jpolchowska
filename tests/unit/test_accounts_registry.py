@@ -32,3 +32,16 @@ class TestAccountsRegistry:
     def test_get_account_count_correct(self):
         self.registry.accounts = [self.account1, self.account2]
         assert self.registry.get_account_count() == 2
+
+    def test_delete_account_existing_pesel(self):
+        self.registry.accounts = [self.account1, self.account2]
+        self.registry.delete_account("85111100165")
+        assert self.registry.get_account_count() == 1
+        assert self.registry.get_account_by_pesel("85111100165") == None
+        assert self.registry.get_account_by_pesel("85050512345") == self.account2
+
+    def test_delete_account_nonexistent_pesel(self):
+        self.registry.accounts = [self.account1]
+        self.registry.delete_account("00000000000")
+        assert self.registry.get_account_count() == 1
+        assert self.registry.accounts[0] == self.account1
