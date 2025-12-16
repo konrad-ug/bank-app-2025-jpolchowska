@@ -59,3 +59,8 @@ class TestApi:
         assert response.json()["message"] == "Account deleted"
         response2 = requests.get(f"{self.url}/api/accounts/12345678901")
         assert response2.status_code == 404
+
+    def test_create_account_with_existing_pesel(self):
+        response = requests.post(f"{self.url}/api/accounts", json=self.person)
+        assert response.status_code == 409
+        assert response.json()["message"] == "Account with this PESEL already exists"
