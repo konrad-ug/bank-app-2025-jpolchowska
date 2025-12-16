@@ -17,8 +17,10 @@ class TestAccountsRegistry:
         self.account2 = PersonalAccount("Jane", "Doe", "85050512345")
 
     def test_add_account_correct(self):
-        self.registry.add_account(self.account1)
-        assert self.registry.accounts[-1] == self.account1
+        result = self.registry.add_account(self.account1)
+        assert result is True
+        assert self.registry.get_account_count() == 1
+        assert self.registry.accounts[0] == self.account1
 
     def test_get_account_by_pesel_correct(self):
         self.registry.accounts = [self.account1]
@@ -45,3 +47,9 @@ class TestAccountsRegistry:
         self.registry.delete_account("00000000000")
         assert self.registry.get_account_count() == 1
         assert self.registry.accounts[0] == self.account1
+
+    def test_add_account_duplicate_pesel(self):
+        self.registry.add_account(self.account1)
+        result = self.registry.add_account(self.account1)
+        assert result is False
+        assert self.registry.get_account_count() == 1

@@ -36,9 +36,9 @@ class PersonalAccount(Account):
         else:
             return 0
 
-    def express_transfer(self, amount: float) -> None:
+    def express_transfer(self, amount: float) -> bool:
         fee = 1.0
-        super().express_transfer(amount, fee)
+        return super().express_transfer(amount, fee)
 
     def submit_for_loan(self, amount: float):
         length = len(self.history)

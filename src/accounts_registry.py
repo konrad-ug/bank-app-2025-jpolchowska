@@ -6,7 +6,10 @@ class AccountsRegistry:
         self.accounts: List[PersonalAccount] = []
 
     def add_account(self, account: PersonalAccount):
+        if self.get_account_by_pesel(account.pesel):
+            return False
         self.accounts.append(account)
+        return True
 
     def get_account_by_pesel(self, pesel):
         for account in self.accounts:

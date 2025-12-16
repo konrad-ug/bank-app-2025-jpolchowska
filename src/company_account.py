@@ -11,9 +11,9 @@ class CompanyAccount(Account):
             return True
         return False
     
-    def express_transfer(self, amount: float) -> None:
+    def express_transfer(self, amount: float) -> bool:
         fee = 5.0
-        super().express_transfer(amount, fee)
+        return super().express_transfer(amount, fee)
 
     def take_loan(self, amount: float):
         if self.balance >= amount * 2 and self.is_transfer_to_ZUS():
