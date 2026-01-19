@@ -208,3 +208,5 @@ __marimo__/
 
 # macOS system file
 .DS_Store
+
+htmlcov/
