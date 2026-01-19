@@ -1,10 +1,19 @@
+import os
+import requests
+from datetime import date
+
 from src.account import Account
 
 class CompanyAccount(Account):
     def __init__(self, company_name, nip):
         super().__init__()
         self.company_name = company_name
-        self.nip = nip if self.is_nip_valid(nip) else "Invalid"
+        if not self.is_nip_valid(nip):
+            self.nip = "Invalid"
+        elif self.verify_nip(nip):
+            self.nip = nip
+        else:
+            raise ValueError("Company not registered!!")
 
     def is_nip_valid(self, nip):
         if isinstance(nip, str) and len(nip) == 10 and nip.isdigit():
@@ -27,3 +36,21 @@ class CompanyAccount(Account):
             if transfer == -1775:
                 return True
         return False
+    
+    def verify_nip(self, nip):
+        today = date.today().isoformat()
+        base_url = os.getenv("BANK_APP_MF_URL", "https://wl-api.mf.gov.pl")
+        url = f"{base_url}/api/search/nip/{nip}?date={today}"
+
+        try:
+            response = requests.get(url)
+            data = response.json()
+            print(f"Response for NIP {nip}: {data}")
+            result = data.get("result")
+            subject = result.get("subject")
+            status = subject.get("statusVat")
+            return status == "Czynny"
+        
+        except requests.RequestException as e:
+            print(f"API Connection Error: {e}")
+            return False

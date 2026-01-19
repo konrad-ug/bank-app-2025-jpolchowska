@@ -49,27 +49,45 @@ class TestTransfers:
         assert result is False
         assert account.balance == 50.0
 
-    def test_company_incoming_transfer_correct(self):
+    def test_company_incoming_transfer_correct(self, mocker):
+        mocker.patch(
+            "src.company_account.CompanyAccount.verify_nip",
+            return_value=True
+        )
+
         account = CompanyAccount("TechCorp", "1234567890")
         result = account.incoming_transfer(200.0)
         assert result is True
         assert account.balance == 200.0
 
-    def test_company_outgoing_transfer_correct(self):
+    def test_company_outgoing_transfer_correct(self, mocker):
+        mocker.patch(
+            "src.company_account.CompanyAccount.verify_nip",
+            return_value=True
+        )
+
         account = CompanyAccount("TechCorp", "1234567890")
         account.incoming_transfer(100.0)
         result = account.outgoing_transfer(40.0)
         assert result is True
         assert account.balance == 60.0
 
-    def test_company_express_transfer_correct(self):
+    def test_company_express_transfer_correct(self, mocker):
+        mocker.patch(
+            "src.company_account.CompanyAccount.verify_nip",
+            return_value=True
+        )
         account = CompanyAccount("TechCorp", "1234567890")
         account.incoming_transfer(50.0)
         result = account.express_transfer(50.0)
         assert result is True
         assert account.balance == -5.0
 
-    def test_company_express_transfer_too_much(self):
+    def test_company_express_transfer_too_much(self, mocker):
+        mocker.patch(
+            "src.company_account.CompanyAccount.verify_nip",
+            return_value=True
+        )
         account = CompanyAccount("TechCorp", "1234567890")
         account.incoming_transfer(50.0)
         result = account.express_transfer(100.0)

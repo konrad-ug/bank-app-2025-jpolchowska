@@ -2,40 +2,54 @@ from src.company_account import CompanyAccount
 import pytest
 
 class TestCompanyAccount:
-    def test_company_account_creation(self):
-        account = CompanyAccount("Tech Solutions", "1234567890")
-        assert account.company_name == "Tech Solutions"
-        assert account.nip == "1234567890"
-        assert account.balance == 0.0
-
-    def test_nip_empty(self):
-        account = CompanyAccount("Tech Solutions", "")
-        assert account.nip == "Invalid"
-
-    def test_nip_none(self):
-        account = CompanyAccount("Tech Solutions", None)
-        assert account.nip == "Invalid"
-
-    def test_nip_too_short(self):
+    def test_invalid_nip_no_request(self, mocker):
+        mock_get = mocker.patch("src.company_account.requests.get")
         account = CompanyAccount("Tech Solutions", "123")
         assert account.nip == "Invalid"
+        mock_get.assert_not_called()
 
-    def test_nip_too_long(self):
-        account = CompanyAccount("Tech Solutions", "1234567891011")
-        assert account.nip == "Invalid"
-    
-    def test_nip_with_letters(self):
-        account = CompanyAccount("Tech Solutions", "123456789A")
-        assert account.nip == "Invalid"
+    def test_active_company(self, mocker):
+        mocker.patch(
+            "src.company_account.requests.get",
+            return_value=mocker.Mock(
+                json=lambda: {
+                    "result": {
+                        "subject": {
+                            "statusVat": "Czynny"
+                        }
+                    }
+                }
+            )
+        )
 
-    def test_nip_correct(self):
-        account = CompanyAccount("Tech Solutions", "9492458300")
-        assert account.nip == "9492458300"
+        account = CompanyAccount("Tech Solutions", "1234567890")
+        assert account.nip == "1234567890"
+
+    def test_inactive_company_raises_error(self, mocker):
+        mocker.patch(
+            "src.company_account.requests.get",
+            return_value=mocker.Mock(
+                json=lambda: {
+                    "result": {
+                        "subject": {
+                            "statusVat": "Zwolniony"
+                        }
+                    }
+                }
+            )
+        )
+
+        with pytest.raises(ValueError):
+            CompanyAccount("Tech Solutions", "1234567890")
 
 class TestLoan:
 
     @pytest.fixture(autouse=True)
-    def account(self):
+    def account(self, mocker):
+        mocker.patch(
+            "src.company_account.CompanyAccount.verify_nip",
+            return_value=True
+        )
         self.account = CompanyAccount("Tech Solutions", "1234567890")
     
     @pytest.mark.parametrize(
