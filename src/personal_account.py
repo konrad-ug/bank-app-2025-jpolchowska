@@ -74,3 +74,23 @@ class PersonalAccount(Account):
         subject = "Account Transfer History " + today_date
         text = self.history_email_text_template.format(self.history)
         return SMTPClient.send(subject, text, email_address)
+    
+    def to_dict(self):
+        return {
+            "first name": self.first_name,
+            "last_name": self.last_name,
+            "pesel": self.pesel,
+            "balance": self.balance,
+            "history": self.history,
+        }
+
+    @classmethod
+    def from_dict(cls, data):
+        account = cls(
+            data.get("first_name"),
+            data.get("last_name"),
+            data.get("pesel"),
+        )
+        account.balance = data.get("balance", 0.0)
+        account.history = data.get("history", [])
+        return account

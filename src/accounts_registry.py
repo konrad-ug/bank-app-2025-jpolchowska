@@ -27,3 +27,6 @@ class AccountsRegistry:
         account = self.get_account_by_pesel(pesel)
         if account is not None:
             self.accounts.remove(account)
+
+    # def clear(self):
+    #     self._accounts = []
