@@ -110,21 +110,3 @@ def load_accounts():
     for account in accounts:
         registry.add_account(account)
     return jsonify({"message": "Accounts loaded from MongoDB"}), 200
-
-# @app.route("/api/accounts/load", methods=['POST'])
-# def load_accounts():
-#     repo = MongoAccountsRepository()
-#     accounts = repo.load_all()
-
-#     registry.clear()
-
-#     for account in accounts:
-#         registry.add_account(account)
-
-#     return jsonify({"message": "Accounts loaded from MongoDB"}), 200
-
-# @app.route("/api/accounts/clear", methods=["POST"])
-# def clear_accounts():
-#     registry.accounts = []
-#     registry.clear()
-#     return jsonify({"message": "Registry cleared"}), 200
