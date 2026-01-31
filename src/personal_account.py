@@ -91,6 +91,6 @@ class PersonalAccount(Account):
             data.get("last_name"),
             data.get("pesel"),
         )
-        account.balance = data.get("balance", account.balance)
+        account.balance = data.get("balance", 0.0)
         account.history = data.get("history", [])
         return account
