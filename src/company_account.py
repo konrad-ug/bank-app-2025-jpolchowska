@@ -1,10 +1,13 @@
 import os
 import requests
 from datetime import date
+from smtp.smtp import SMTPClient
 
 from src.account import Account
 
 class CompanyAccount(Account):
+    history_email_text_template = "Company account history: {}"
+
     def __init__(self, company_name, nip):
         super().__init__()
         self.company_name = company_name
@@ -54,3 +57,9 @@ class CompanyAccount(Account):
         except requests.RequestException as e:
             print(f"API Connection Error: {e}")
             return False
+        
+    def send_history_via_email(self, email_address: str) -> bool:
+        today_date = date.today().strftime("%Y-%m-%d")
+        subject = "Account Transfer History " + today_date
+        text = self.history_email_text_template.format(self.history)
+        return SMTPClient.send(subject, text, email_address)
