@@ -28,5 +28,5 @@ class AccountsRegistry:
         if account is not None:
             self.accounts.remove(account)
 
-    def clear(self):
-        self._accounts = []
+    # def clear(self):
+    #     self._accounts = []
