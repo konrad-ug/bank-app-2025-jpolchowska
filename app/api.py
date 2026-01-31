@@ -96,21 +96,11 @@ def transfer(pesel):
         return jsonify({"message": "Unknown transfer type"}), 400
     return jsonify({"message": "Transfer successful"}), 200
 
-# @app.route("/api/accounts/save", methods=['POST'])
-# def save_accounts():
-#     repo = MongoAccountsRepository()
-#     repo.save_all(registry.get_all_accounts())
-#     return jsonify({"message": "Accounts saved to MongoDB"}), 200
-
 @app.route("/api/accounts/save", methods=['POST'])
 def save_accounts():
-    try:
-        repo = MongoAccountsRepository()
-        repo.save_all(registry.get_all_accounts())
-        return jsonify({"message": "Accounts saved to MongoDB"}), 200
-    except Exception as e:
-        print("SAVE ERROR:", e)
-        return jsonify({"message": "Accounts saved to MongoDB"}), 200
+    repo = MongoAccountsRepository()
+    repo.save_all(registry.get_all_accounts())
+    return jsonify({"message": "Accounts saved to MongoDB"}), 200
 
 @app.route("/api/accounts/load", methods=['POST'])
 def load_accounts():
