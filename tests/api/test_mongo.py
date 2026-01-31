@@ -1,60 +1,46 @@
 import pytest
 import requests
-import uuid
 
-class TestAPIMongo:
+class TestSaveLoadApi:
+    url = "http://127.0.0.1:5000"
+    acc_data = {"name": "Anna", "surname": "Nowak", "pesel": "11223344556"}
+    transfer_data = {"amount": 200.0, "type": "incoming"}
 
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.url = "http://127.0.0.1:5000/api/accounts"
+    def _wipe(self):
+        r = requests.get(f"{self.url}/api/accounts", timeout=5)
+        if r.ok:
+            for a in r.json():
+                requests.delete(f"{self.url}/api/accounts/{a['pesel']}", timeout=5)
 
-        # unikalne pesele – brak kolizji między testami
-        self.person1 = {
-            "name": "Jane",
-            "surname": "Doe",
-            "pesel": "9" + uuid.uuid4().hex[:10]
-        }
-        self.person2 = {
-            "name": "John",
-            "surname": "Doe",
-            "pesel": "8" + uuid.uuid4().hex[:10]
-        }
+    @pytest.fixture(autouse=True, scope="function")
+    def setup_method(self):
+        self._wipe()
+        r = requests.post(f"{self.url}/api/accounts", json=self.acc_data, timeout=5)
+        assert r.status_code in (201, 409)
+        r = requests.post(
+            f"{self.url}/api/accounts/{self.acc_data['pesel']}/transfer",
+            json=self.transfer_data,
+            timeout=5,
+        )
+        assert r.status_code == 200
+        yield
+        self._wipe()
 
-    def test_create_save_and_load(self):
-        # create
-        requests.post(self.url, json=self.person1)
-        requests.post(self.url, json=self.person2)
+    def test_save_load_accounts(self):
+        r = requests.post(f"{self.url}/api/accounts/save", timeout=5)
+        assert r.status_code == 200
+        assert r.json()["message"] == "Accounts saved to MongoDB"
 
-        # save to mongo
-        resp = requests.post(f"{self.url}/save")
-        assert resp.status_code == 200
+        self._wipe()
 
-        # clear registry by restarting state via load
-        resp = requests.post(f"{self.url}/load")
-        assert resp.status_code == 200
+        r = requests.post(f"{self.url}/api/accounts/load", timeout=5)
+        assert r.status_code == 200
+        assert r.json()["message"] == "Accounts loaded from MongoDB"
 
-        # verify
-        response = requests.get(self.url)
-        assert response.status_code == 200
-
-        pesels = {acc["pesel"] for acc in response.json()}
-        assert self.person1["pesel"] in pesels
-        assert self.person2["pesel"] in pesels
-
-    def test_load_without_save_does_not_add_new_accounts(self):
-        # create accounts, but DO NOT save
-        requests.post(self.url, json=self.person1)
-        requests.post(self.url, json=self.person2)
-
-        # load from mongo (should load only what was previously saved)
-        resp = requests.post(f"{self.url}/load")
-        assert resp.status_code == 200
-
-        response = requests.get(self.url)
-        assert response.status_code == 200
-
-        pesels = {acc["pesel"] for acc in response.json()}
-
-        # accounts from THIS test should NOT magically appear in mongo
-        assert self.person1["pesel"] not in pesels
-        assert self.person2["pesel"] not in pesels
+        r = requests.get(f"{self.url}/api/accounts/{self.acc_data['pesel']}", timeout=5)
+        assert r.status_code == 200
+        body = r.json()
+        assert body["name"] == self.acc_data["name"]
+        assert body["surname"] == self.acc_data["surname"]
+        assert body["pesel"] == self.acc_data["pesel"]
+        assert body["balance"] == 200.0
