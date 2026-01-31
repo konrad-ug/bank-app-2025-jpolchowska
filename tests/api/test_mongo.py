@@ -1,46 +1,58 @@
-import pytest
 import requests
+import pytest
 
 class TestSaveLoadApi:
-    url = "http://127.0.0.1:5000"
-    acc_data = {"name": "Anna", "surname": "Nowak", "pesel": "11223344556"}
-    transfer_data = {"amount": 200.0, "type": "incoming"}
-
-    def _wipe(self):
-        r = requests.get(f"{self.url}/api/accounts", timeout=5)
-        if r.ok:
-            for a in r.json():
-                requests.delete(f"{self.url}/api/accounts/{a['pesel']}", timeout=5)
 
     @pytest.fixture(autouse=True, scope="function")
     def setup_method(self):
-        self._wipe()
-        r = requests.post(f"{self.url}/api/accounts", json=self.acc_data, timeout=5)
-        assert r.status_code in (201, 409)
-        r = requests.post(
-            f"{self.url}/api/accounts/{self.acc_data['pesel']}/transfer",
-            json=self.transfer_data,
-            timeout=5,
+        # Create account
+        response = requests.post(
+            f"{self.url}/api/accounts",
+            json=self.account_data
         )
-        assert r.status_code == 200
+        assert response.status_code == 201
+
+        # Make a transfer
+        requests.post(
+            f"{self.url}/api/accounts/{self.account_data['pesel']}/transfer",
+            json={"amount": 1000}
+        )
+
         yield
-        self._wipe()
 
-    def test_save_load_accounts(self):
-        r = requests.post(f"{self.url}/api/accounts/save", timeout=5)
-        assert r.status_code == 200
-        assert r.json()["message"] == "Accounts saved to MongoDB"
+        # Cleanup – delete all accounts
+        response = requests.get(f"{self.url}/api/accounts")
+        accounts = response.json()
+        for account in accounts:
+            pesel = account["pesel"]
+            requests.delete(f"{self.url}/api/accounts/{pesel}")
 
-        self._wipe()
+    def test_save_and_load_accounts(self):
+        # Save accounts to MongoDB
+        response = requests.post(f"{self.url}/api/accounts/save")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "Accounts saved to MongoDB"
 
-        r = requests.post(f"{self.url}/api/accounts/load", timeout=5)
-        assert r.status_code == 200
-        assert r.json()["message"] == "Accounts loaded from MongoDB"
+        # Delete all accounts from registry
+        response = requests.get(f"{self.url}/api/accounts")
+        accounts = response.json()
+        for account in accounts:
+            pesel = account["pesel"]
+            requests.delete(f"{self.url}/api/accounts/{pesel}")
 
-        r = requests.get(f"{self.url}/api/accounts/{self.acc_data['pesel']}", timeout=5)
-        assert r.status_code == 200
-        body = r.json()
-        assert body["name"] == self.acc_data["name"]
-        assert body["surname"] == self.acc_data["surname"]
-        assert body["pesel"] == self.acc_data["pesel"]
-        assert body["balance"] == 200.0
+        # Load accounts from MongoDB
+        response = requests.post(f"{self.url}/api/accounts/load")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["message"] == "Accounts loaded from MongoDB"
+
+        # Verify the account is back in the registry
+        response = requests.get(f"{self.url}/api/accounts")
+        accounts = response.json()
+
+        assert len(accounts) == 1
+        assert accounts[0]["pesel"] == self.account_data["pesel"]
+        assert accounts[0]["balance"] == 1000
+        assert accounts[0]["name"] == self.account_data["name"]
+        assert accounts[0]["surname"] == self.account_data["surname"]
