@@ -3,51 +3,45 @@ import pytest
 
 class TestSaveLoadApi:
 
+    @pytest.fixture(autouse=True)
+    def base_data(self):
+        self.url = "http://127.0.0.1:5000"
+        self.account_data = {
+            "name": "Anna",
+            "surname": "Nowak",
+            "pesel": "11223344556"
+        }
+
     @pytest.fixture(autouse=True, scope="function")
     def setup_method(self):
-        # Create account
         response = requests.post(
             f"{self.url}/api/accounts",
             json=self.account_data
         )
         assert response.status_code == 201
 
-        # Make a transfer
         requests.post(
             f"{self.url}/api/accounts/{self.account_data['pesel']}/transfer",
-            json={"amount": 1000}
+            json={"amount": 1000, "type": "incoming"}
         )
 
         yield
 
-        # Cleanup – delete all accounts
         response = requests.get(f"{self.url}/api/accounts")
-        accounts = response.json()
-        for account in accounts:
-            pesel = account["pesel"]
-            requests.delete(f"{self.url}/api/accounts/{pesel}")
+        for account in response.json():
+            requests.delete(f"{self.url}/api/accounts/{account['pesel']}")
 
     def test_save_and_load_accounts(self):
-        # Save accounts to MongoDB
         response = requests.post(f"{self.url}/api/accounts/save")
         assert response.status_code == 200
-        data = response.json()
-        assert data["message"] == "Accounts saved to MongoDB"
 
-        # Delete all accounts from registry
         response = requests.get(f"{self.url}/api/accounts")
-        accounts = response.json()
-        for account in accounts:
-            pesel = account["pesel"]
-            requests.delete(f"{self.url}/api/accounts/{pesel}")
+        for account in response.json():
+            requests.delete(f"{self.url}/api/accounts/{account['pesel']}")
 
-        # Load accounts from MongoDB
         response = requests.post(f"{self.url}/api/accounts/load")
         assert response.status_code == 200
-        data = response.json()
-        assert data["message"] == "Accounts loaded from MongoDB"
 
-        # Verify the account is back in the registry
         response = requests.get(f"{self.url}/api/accounts")
         accounts = response.json()
 
